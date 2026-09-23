@@ -61,13 +61,16 @@ router.post('/register', async (req, res) => {
     const formattedUsername = username.trim();
 
     const existingUser = db.prepare('SELECT * FROM users WHERE username = ?').get(formattedUsername);
+    const totalUsers = db.prepare('SELECT COUNT(*) AS total FROM users').get().total;
 
     if (existingUser) {
         return res.status(409).json('Nom d\'utilisateur déjà utilisé');
     }
 
     try {
-        db.prepare('INSERT INTO users (username, password) VALUES (?, ?)').run(formattedUsername, hashedPassword);
+        const result = db.prepare('INSERT INTO users (username, password) VALUES (?, ?)').run(formattedUsername, hashedPassword);
+        const userId = Number(result.lastInsertRowid);
+        req.session.user = { username: formattedUsername, id: userId };
         res.status(201).json('Utilisateur enregistré avec succès');
     } catch (err) {
         res.status(500).json('Erreur lors de l\'enregistrement de l\'utilisateur');
@@ -98,7 +101,7 @@ router.get('/api/me', isAuthenticated, (req, res) => {
 
 router.post('/api/reports', (req, res) => {
     const { content } = req.body;
-    const userId = req.user.id;
+    const userId = req.session.user.id;
 
     if (!content) {
         return res.status(400).json('Le contenu du rrouterort est requis');
@@ -106,7 +109,6 @@ router.post('/api/reports', (req, res) => {
 
     try {
         db.prepare('INSERT INTO reports (content, user_id) VALUES (?, ?)').run(content, userId);
-        req.session.user = { username: user.username, id: user.id };
         res.status(201).json('Rrouterort soumis avec succès', '');
     } catch (err) {
         res.status(500).json('Erreur lors de la soumission du rrouterort');

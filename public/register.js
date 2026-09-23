@@ -11,6 +11,6 @@ document.getElementById('register-form').onsubmit = async e => {
 
 
   if(response.ok){
-    window.location.href = "/auth/login"
+    window.location.href = "/bat-computer"
   }
 }
