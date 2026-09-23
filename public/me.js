@@ -1,7 +1,7 @@
 window.onload = async function () {
   const fetchUserInfo = async () => {
     try {
-      const response = await fetch('/api/me', {
+      const response = await fetch('/auth/api/me', {
         method: 'GET',
       });
       const h1 = document.querySelector('.hello');
@@ -19,7 +19,7 @@ window.onload = async function () {
 
   const fetchGadgets = async () => {
     try {
-      const response = await fetch('/api/secrets', {
+      const response = await fetch('/auth/api/secrets', {
         method: 'GET',
       });
       const gadgetsContainer = document.querySelector('.gadgets');
