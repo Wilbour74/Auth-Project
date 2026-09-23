@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bat-Computer - Arsenal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --dark: #0a0e27;
+            --darker: #050812;
+            --gold: #daa520;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--dark) 0%, var(--darker) 100%);
+            color: #fff;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+        }
+
+        .header {
+            background: linear-gradient(90deg, rgba(0,0,0,0.9), rgba(20,20,50,0.9));
+            border-bottom: 3px solid var(--gold);
+            padding: 2rem 0;
+            margin-bottom: 3rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .hello {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(90deg, #fff, var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 20px rgba(218, 165, 32, 0.3);
+        }
+
+        .gadget-card {
+            background: linear-gradient(135deg, rgba(30,30,60,0.8), rgba(20,20,40,0.8));
+            border: 2px solid var(--gold);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .gadget-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(218, 165, 32, 0.3);
+            border-color: #ffd700;
+        }
+
+        .gadget-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(218, 165, 32, 0.1), transparent);
+            transition: left 0.3s ease;
+            pointer-events: none;
+        }
+
+        .gadget-card:hover::before {
+            left: 100%;
+        }
+
+        .gadget-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 0 10px var(--gold));
+        }
+
+        .gadget-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--gold);
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+
+        .gadget-desc {
+            font-size: 0.95rem;
+            color: #b0b0b0;
+            line-height: 1.6;
+        }
+
+        .container-fluid {
+            padding: 0 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container-fluid">
+            <h1 class="hello">🦇 Bienvenue, Justicier</h1>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <h2 class="mb-5" style="color: var(--gold); font-weight: bold; letter-spacing: 2px;">ARSENAL - GADGETS DE COMBAT</h2>
+        <div class="row g-4 gadgets"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/me.js"></script>
+</body>
+</html>

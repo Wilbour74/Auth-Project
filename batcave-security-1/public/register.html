@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription - Bat-Cave Security</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --dark: #0a0e27;
+            --darker: #050812;
+            --gold: #daa520;
+        }
+        body {
+            background: linear-gradient(135deg, var(--dark) 0%, var(--darker) 100%);
+            color: #fff;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .register-container {
+            max-width: 500px;
+            width: 100%;
+            padding: 2rem;
+        }
+        .register-card {
+            background: linear-gradient(135deg, rgba(30,30,60,0.9), rgba(20,20,40,0.9));
+            border: 2px solid var(--gold);
+            border-radius: 15px;
+            padding: 3rem 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 40px rgba(218, 165, 32, 0.2);
+        }
+        .register-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+            background: linear-gradient(90deg, #fff, var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 2rem;
+            letter-spacing: 2px;
+        }
+        .form-label {
+            color: var(--gold);
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+        .form-control {
+            background: rgba(50,50,80,0.6);
+            border: 1px solid var(--gold);
+            color: #fff;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            background: rgba(60,60,100,0.8);
+            border-color: #ffd700;
+            color: #fff;
+            box-shadow: 0 0 15px rgba(218, 165, 32, 0.3);
+        }
+        .form-control::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+        .btn-register {
+            background: linear-gradient(90deg, var(--gold), #ffd700);
+            border: none;
+            color: #000;
+            font-weight: bold;
+            padding: 0.75rem 2rem;
+            width: 100%;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .btn-register:hover {
+            background: linear-gradient(90deg, #ffd700, #ffed4e);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(218, 165, 32, 0.4);
+            color: #000;
+        }
+        .message {
+            margin-top: 1.5rem;
+            text-align: center;
+            min-height: 30px;
+        }
+        .message.success {
+            color: #4ade80;
+        }
+        .message.error {
+            color: #ef4444;
+        }
+        .bat-computer-link {
+            display: none;
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        .bat-computer-link a {
+            color: var(--gold);
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+            display: inline-block;
+        }
+        .bat-computer-link a:hover {
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(218, 165, 32, 0.5);
+            transform: scale(1.05);
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="register-card">
+            <h1 class="register-title">INSCRIPTION</h1>
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="username" class="form-label">Nom d'utilisateur</label>
+                    <input type="text" id="username" class="form-control" placeholder="Entrez votre pseudonyme" required />
+                </div>
+                <div class="form-group">
+                    <label for="password" class="form-label">Mot de passe</label>
+                    <input type="password" id="password" class="form-control" placeholder="Min. 8 caracteres" required />
+                </div>
+                <button type="submit" class="btn btn-register">S'inscrire</button>
+            </form>
+            <p id="message" class="message"></p>
+            <div class="bat-computer-link" id="bat-computer-container">
+                <a href="/bat-computer">Acceder au Bat-Computer</a>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="register.js"></script>
+</body>
+</html>
