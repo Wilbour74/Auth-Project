@@ -2,8 +2,45 @@ const express = require('express');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const db = require('../config/db');
-const checkAuth = require('../middlewares/checkAuth');
+const isAuthenticated = require('../middlewares/authCheck');
 const router = express.Router();
+
+router.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, '../views', 'login.html'));
+});
+
+router.post('/login', async (req, res, next) => {
+    const { username, password } = req.body || {};
+    const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+        return res.status(401).json({ erreur: 'Email ou mot de passe incorrect' })
+    }
+    req.session.regenerate((err) => {
+        if (err) {
+            return next(err);
+        }
+
+        req.session.user = { username: user.username, id: user.id };
+        req.session.save(function (err) {
+            if (err) return next(err);
+            return res.json({
+                success: true,
+                redirect: '/bat-computer'
+            });
+        })
+    });
+});
+
+router.post('/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            return res.status(500).json({ erreur: 'Impossible de vous déconnecter' });
+        }
+
+        res.clearCookie('connect.sid');
+        return res.status(200).json({ success: true, redirect: '/auth/login' });
+    });
+});
 
 router.get('/register', (req, res) => {
     res.sendFile(path.join(__dirname, '../views', 'register.html'));
@@ -37,11 +74,9 @@ router.post('/register', async (req, res) => {
     }
 });
 
-router.get('/bat-computer', checkAuth, (req, res) => {
-    res.sendFile(path.join(__dirname, '../views', 'bat-computer.html'));
-});
 
-router.get('/api/secrets', checkAuth, (req, res) => {
+
+router.get('/api/secrets', isAuthenticated, (req, res) => {
     const gadgets = [
         { name: 'Batarang', desc: 'Un boomerang en forme de chauve-souris utilisé par Batman.', icon: 'fa-shuriken' },
         { name: 'Batmobile', desc: 'La voiture emblématique de Batman, équipée de gadgets et d\'armes.', icon: 'fa-car' },
@@ -52,12 +87,16 @@ router.get('/api/secrets', checkAuth, (req, res) => {
     res.json({ gadgets });
 });
 
-router.get('/api/me', checkAuth, (req, res) => {
-    const user = req.user;
-    res.json({ username: user.username, id: user.id });
+router.get('/api/me', isAuthenticated, (req, res) => {
+    const user = req.session.user;
+    if (!user) {
+        return res.status(401).json({ erreur: 'Authentification requise' });
+    }
+
+    return res.json({ username: user.username, id: user.id });
 });
 
-router.post('/api/reports', checkAuth, (req, res) => {
+router.post('/api/reports', (req, res) => {
     const { content } = req.body;
     const userId = req.user.id;
 
@@ -67,7 +106,8 @@ router.post('/api/reports', checkAuth, (req, res) => {
 
     try {
         db.prepare('INSERT INTO reports (content, user_id) VALUES (?, ?)').run(content, userId);
-        res.status(201).json('Rrouterort soumis avec succès');
+        req.session.user = { username: user.username, id: user.id };
+        res.status(201).json('Rrouterort soumis avec succès', '');
     } catch (err) {
         res.status(500).json('Erreur lors de la soumission du rrouterort');
     }

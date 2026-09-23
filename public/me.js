@@ -48,3 +48,26 @@ window.onload = async function () {
   await fetchUserInfo();
   await fetchGadgets();
 }
+
+const logoutButton = document.querySelector('.logout-btn');
+
+logoutButton.addEventListener('click', async () => {
+  try {
+    const response = await fetch('/auth/logout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      window.location.href = '/auth/login';
+      return;
+    }
+
+    const errorData = await response.json().catch(() => ({}));
+    console.error('Erreur logout:', errorData.erreur || 'Déconnexion impossible');
+  } catch (error) {
+    console.error('Erreur logout:', error);
+  }
+});
