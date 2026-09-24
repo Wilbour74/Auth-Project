@@ -4,31 +4,44 @@ const bcrypt = require('bcrypt');
 const db = require('../config/db');
 const isAuthenticated = require('../middlewares/authCheck');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
+const crypto = require('crypto');
+
+dotenv.config();
 
 router.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, '../views', 'login.html'));
 });
 
-router.post('/login', async (req, res, next) => {
+router.post('/login', async (req, res) => {
     const { username, password } = req.body || {};
-    const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-        return res.status(401).json({ erreur: 'Email ou mot de passe incorrect' })
-    }
-    req.session.regenerate((err) => {
-        if (err) {
-            return next(err);
+    try {
+        const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.status(401).json({ erreur: 'Email ou mot de passe incorrect' })
         }
 
-        req.session.user = { username: user.username, id: user.id };
-        req.session.save(function (err) {
-            if (err) return next(err);
-            return res.json({
-                success: true,
-                redirect: '/bat-computer'
-            });
-        })
-    });
+        const token = jwt.sign(
+            { id: user.id, username: user.username },
+            process.env.SESSION_SECRET,
+            { expiresIn: '15s'}
+        );
+
+        const refreshToken = crypto.randomBytes(40).toString('hex');
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        
+        db.prepare('INSERT INTO refresh_tokens (token, user_id, expires_at) VALUES (?, ?, ?)')
+            .run(refreshToken, user.id, expiresAt);
+        console.log("Insertion");
+
+        res.cookie('token', token, { httpOnly: true, sameSite: 'strict', maxAge: 15000 });
+        res.cookie('refreshToken', refreshToken, { httpOnly: true, sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 });
+
+        res.json({ message: 'Connexion réussie.' });
+    } catch (error) {
+        res.status(500).json({ erreur: 'Erreur serveur' });
+    }
 });
 
 router.post('/logout', (req, res) => {
@@ -61,7 +74,6 @@ router.post('/register', async (req, res) => {
     const formattedUsername = username.trim();
 
     const existingUser = db.prepare('SELECT * FROM users WHERE username = ?').get(formattedUsername);
-    const totalUsers = db.prepare('SELECT COUNT(*) AS total FROM users').get().total;
 
     if (existingUser) {
         return res.status(409).json('Nom d\'utilisateur déjà utilisé');
