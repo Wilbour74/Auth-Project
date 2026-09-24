@@ -23,9 +23,16 @@
         .header {
             background: linear-gradient(90deg, rgba(0,0,0,0.9), rgba(20,20,50,0.9));
             border-bottom: 3px solid var(--gold);
-            padding: 2rem 0;
+            padding: 1.2rem 0;
             margin-bottom: 3rem;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
         }
 
         .hello {
@@ -36,6 +43,24 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             text-shadow: 0 0 20px rgba(218, 165, 32, 0.3);
+            margin: 0;
+        }
+
+        .logout-btn {
+            background: linear-gradient(90deg, var(--gold), #ffd700);
+            border: none;
+            color: #000;
+            font-weight: bold;
+            border-radius: 8px;
+            padding: 0.7rem 1.2rem;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+        }
+
+        .logout-btn:hover {
+            background: linear-gradient(90deg, #ffd700, #ffed4e);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(218, 165, 32, 0.35);
         }
 
         .gadget-card {
@@ -98,8 +123,9 @@
 </head>
 <body>
     <div class="header">
-        <div class="container-fluid">
+        <div class="container-fluid header-content">
             <h1 class="hello">🦇 Bienvenue, Justicier</h1>
+            <button type="button" class="logout-btn">Déconnexion</button>
         </div>
     </div>
 
