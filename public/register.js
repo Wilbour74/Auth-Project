@@ -3,7 +3,7 @@ document.getElementById('register-form').onsubmit = async e => {
   const username = document.getElementById('username').value.trim()
   const password = document.getElementById('password').value
 
-  const response = await fetch('/auth/register', {
+  const response = await fetch('/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password })
@@ -11,6 +11,6 @@ document.getElementById('register-form').onsubmit = async e => {
 
 
   if(response.ok){
-    window.location.href = "/bat-computer"
+    window.location.href = "/login"
   }
 }

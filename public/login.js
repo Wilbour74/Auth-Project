@@ -3,7 +3,7 @@ document.getElementById('login-form').onsubmit = async e => {
 
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
-    const response = await fetch('/auth/login', {
+    const response = await fetch('/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
