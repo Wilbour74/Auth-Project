@@ -7,7 +7,8 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const crypto = require('crypto');
-
+const { authenticator } = require('@otplib/preset-v11');
+const qrcode = require('qrcode');
 dotenv.config();
 
 
@@ -20,13 +21,28 @@ router.post('/login', async (req, res) => {
     try {
         const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
         if (!user || !(await bcrypt.compare(password, user.password))) {
-            return res.status(401).json({ erreur: 'Email ou mot de passe incorrect' })
+            return res.status(401).json({ error: 'Email ou mot de passe incorrect' })
+        }
+
+        if (user.two_factor_enabled === 0 || !user.two_factor_secret) {
+            return res.status(403).json({
+                error: 'L\'authentification à deux facteurs est requise. Veuillez configurer 2FA avant de vous connecter.',
+                requires2FASetup: true,
+            })
+        }
+
+        if (user.two_factor_enabled === 1) {
+            return res.status(200).json({
+                message: '2FA requis',
+                requires2FA: true,
+                username: user.username
+            });
         }
 
         const token = jwt.sign(
             { id: user.id, username: user.username },
             process.env.SESSION_SECRET,
-            { expiresIn: '15s' }
+            { expiresIn: '15m' }
         );
 
         const refreshToken = crypto.randomBytes(40).toString('hex');
@@ -40,7 +56,7 @@ router.post('/login', async (req, res) => {
 
         res.json({ message: 'Connexion réussie.' });
     } catch (error) {
-        res.status(500).json({ erreur: 'Erreur serveur' });
+        res.status(500).json({ error: 'Erreur serveur' });
     }
 });
 
@@ -61,7 +77,7 @@ router.post('/logout', (req, res) => {
         return res.json({ message: 'Déconnexion et révocation réussies.' });
     } catch (error) {
         console.error('Erreur lors de la déconnexion :', error);
-        return res.status(500).json({ erreur: 'Erreur serveur lors de la déconnexion' });
+        return res.status(500).json({ error: 'Erreur serveur lors de la déconnexion' });
     }
 });
 
@@ -122,24 +138,24 @@ router.post('/api/auth/change-password', isAuthenticated, async (req, res) => {
     const { currentPassword, newPassword } = req.body || {};
 
     if (typeof currentPassword !== 'string' || typeof newPassword !== 'string') {
-        return res.status(400).json({ erreur: 'Ancien et nouveau mots de passe requis' });
+        return res.status(400).json({ error: 'Ancien et nouveau mots de passe requis' });
     }
 
     const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])[\s\S]{12,}$/;
     if (!strongPasswordRegex.test(newPassword)) {
         return res.status(400).json({
-            erreur: 'Le nouveau mot de passe doit contenir au moins 12 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial'
+            error: 'Le nouveau mot de passe doit contenir au moins 12 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial'
         });
     }
 
     try {
         const user = db.prepare('SELECT password FROM users WHERE id = ?').get(req.user.id);
         if (!user) {
-            return res.status(404).json({ erreur: 'Utilisateur introuvable' });
+            return res.status(404).json({ error: 'Utilisateur introuvable' });
         }
 
         if (!(await bcrypt.compare(currentPassword, user.password))) {
-            return res.status(400).json({ erreur: 'Ancien mot de passe incorrect' });
+            return res.status(400).json({ error: 'Ancien mot de passe incorrect' });
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -147,7 +163,7 @@ router.post('/api/auth/change-password', isAuthenticated, async (req, res) => {
 
         return res.json({ message: 'Mot de passe modifié avec succès' });
     } catch (error) {
-        return res.status(500).json({ erreur: 'Erreur serveur lors du changement de mot de passe' });
+        return res.status(500).json({ error: 'Erreur serveur lors du changement de mot de passe' });
     }
 });
 
@@ -173,23 +189,88 @@ router.post('/api/auth/refresh', (req, res) => {
         .map(cookie => cookie.trim())
         .find(cookie => cookie.startsWith('refreshToken='))
         ?.slice('refreshToken='.length);
-    if (!refreshToken) return res.status(401).json({ erreur: 'Accès refusé' });
+    if (!refreshToken) return res.status(401).json({ error: 'Accès refusé' });
 
     const storedToken = db.prepare('SELECT * FROM refresh_tokens WHERE token = ?').get(refreshToken);
 
     if (!storedToken || new Date() > new Date(storedToken?.expires_at)) {
-        return res.status(401).json({ erreur: 'Session expirée, reconnectez-vous' });
+        return res.status(401).json({ error: 'Session expirée, reconnectez-vous' });
     }
 
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(storedToken.user_id);
     const newToken = jwt.sign(
         { id: user.id, username: user.username },
         process.env.SESSION_SECRET,
-        { expiresIn: '15s' }
+        { expiresIn: '15m' }
     );
 
-    res.cookie('token', newToken, { httpOnly: true, sameSite: 'strict', maxAge: 15000, path: '/' });
+    res.cookie('token', newToken, { httpOnly: true, sameSite: 'strict', maxAge: 900000, path: '/' });
     res.json({ message: 'Jeton d\'accès rafraîchi.' });
+})
+
+router.post('/setup-2fa', async (req, res) => {
+    const { username } = req.body;
+    const existingUser = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+
+    if (!existingUser) {
+        return res.status(404).json({ error: 'Utilisateur introuvable' });
+    }
+
+    if (existingUser.two_factor_enabled === 1) {
+        return res.status(400).json({ error: '2FA est déjà activé pour cet utilisateur' });
+    }
+
+    const secret = authenticator.generateSecret();
+
+    const otpauth = authenticator.keyuri(username, 'Batcave', secret);
+
+    console.log(`Secret pour ${username}: ${secret}`);
+
+    db.prepare('UPDATE users SET two_factor_secret = ? WHERE username = ?').run(secret, username);
+
+    const qrCodeImage = await qrcode.toDataURL(otpauth);
+
+    res.json({ qrCode: qrCodeImage, secret: secret });
+})
+
+router.post('/confirm-2fa', (req, res) => {
+    const { username, code } = req.body;
+    const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+
+    const isValid = authenticator.check(code, user.two_factor_secret);
+
+    if (!isValid) {
+        return res.status(401).json({ error: 'Code incorrect. Activation 2FA échouée' });
+    }
+
+    db.prepare('UPDATE users SET two_factor_enabled = 1 WHERE username = ?').run(username);
+    res.json({ success: true, message: '2FA activé avec succès' });
+})
+
+router.post('/verify-2fa', (req, res) => {
+    const { username, code } = req.body
+    const user = db
+        .prepare('SELECT * FROM users WHERE username = ?')
+        .get(username)
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
+
+    const isValid = authenticator.check(code, user.two_factor_secret)
+    if (!isValid) {
+        return res.status(401).json({ error: 'Code 2FA invalide ou expiré' })
+    }
+
+    const token = jwt.sign(
+        { id: user.id, username: user.username },
+        process.env.SESSION_SECRET,
+        {
+            expiresIn: '15m'
+        }
+    )
+    res.cookie('token', token, { httpOnly: true, sameSite: 'strict', maxAge: 15 * 60 * 1000, path: '/' })
+    res.json({
+        success: true,
+        message: 'Authentification double facteur réussie !'
+    })
 })
 
 module.exports = router;
