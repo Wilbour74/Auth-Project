@@ -1,5 +1,5 @@
 const express = require('express');
-const authRouter = require('./routes/auth');
+const authRouter = require('./routes/authRoutes');
 const batRouter = require('./routes/bat');
 const dotenv = require('dotenv');
 const helmet = require('helmet');
